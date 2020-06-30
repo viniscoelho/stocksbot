@@ -1,8 +1,6 @@
 package types
 
 import (
-	"time"
-
 	"github.com/piquette/finance-go"
 )
 
@@ -37,7 +35,6 @@ type Finance struct {
 	RegularMarketChangePercent float64 `json:"change_percent"`
 	Bid                        float64 `json:"bid"`
 	Ask                        float64 `json:"ask"`
-	Timestamp                  string  `json:"timestamp"`
 }
 
 func NewFinance(q *finance.Quote) Finance {
@@ -47,6 +44,5 @@ func NewFinance(q *finance.Quote) Finance {
 		RegularMarketChangePercent: q.RegularMarketChangePercent,
 		Bid:                        q.Bid,
 		Ask:                        q.Ask,
-		Timestamp:                  time.Now().Format(time.RFC822),
 	}
 }

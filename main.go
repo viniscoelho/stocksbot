@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	telegram "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/piquette/finance-go/forex"
@@ -90,14 +91,19 @@ func main() {
 }
 
 func initializeThresholds() {
-	USDLowThreshold = 5.30
-	USDHighThreshold = 5.45
+	values, err := fetchQuotes()
+	if err != nil {
+		logrus.Fatal(err)
+	}
 
-	EURLowThreshold = 6.0
-	EURHighThreshold = 6.15
+	SAPLowThreshold = values[0].Ask - 2
+	SAPHighThreshold = values[0].Ask + 2
 
-	SAPLowThreshold = 120.0
-	SAPHighThreshold = 125.0
+	EURLowThreshold = values[1].Ask - 10
+	EURHighThreshold = values[1].Ask + 10
+
+	USDLowThreshold = values[2].Ask - 10
+	USDHighThreshold = values[2].Ask + 10
 }
 
 func fetchQuotes() ([]types.Finance, error) {
@@ -131,18 +137,18 @@ func processQuote(f types.Finance) bool {
 	switch f.Code {
 	case types.USDBRLCode:
 		if types.FloatCompare(f.Ask, USDLowThreshold) == types.Less {
-			USDLowThreshold = f.Ask - 0.02
+			USDLowThreshold = f.Ask - 0.03
 			return true
 		} else if types.FloatCompare(f.Ask, USDHighThreshold) == types.More {
-			USDHighThreshold = f.Ask + 0.02
+			USDHighThreshold = f.Ask + 0.03
 			return true
 		}
 	case types.EURBRLCode:
 		if types.FloatCompare(f.Ask, EURLowThreshold) == types.Less {
-			EURLowThreshold = f.Ask - 0.02
+			EURLowThreshold = f.Ask - 0.03
 			return true
 		} else if types.FloatCompare(f.Ask, EURHighThreshold) == types.More {
-			EURHighThreshold = f.Ask + 0.02
+			EURHighThreshold = f.Ask + 0.03
 			return true
 		}
 	case types.SAPStockCode:
@@ -159,15 +165,14 @@ func processQuote(f types.Finance) bool {
 }
 
 func formatResponse(values []types.Finance) string {
-	fmtRes := "Cotações\n"
+	fmtRes := fmt.Sprintf("Cotações %s\n", time.Now().Format(time.RFC822))
 	for _, v := range values {
 		fmtRes += fmt.Sprintf(`
 		Nome: %s
 		Variação: %v%%
 		Compra: %v
 		Venda: %v
-		Horário: %s
-		`, v.Name, v.RegularMarketChangePercent, v.Bid, v.Ask, v.Timestamp)
+		`, v.Name, v.RegularMarketChangePercent, v.Bid, v.Ask)
 	}
 	return fmtRes
 }
