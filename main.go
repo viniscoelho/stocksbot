@@ -54,11 +54,11 @@ func main() {
 	EURLowThreshold = 5.8
 	EURHighThreshold = 6.2
 
-	err := sendCurrencyOnTelegram("I'm alive!")
+	err := sendTelegramMessage("I'm alive!")
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	defer sendCurrencyOnTelegram("I'm dead. :(")
+	defer sendTelegramMessage("I'm dead. :(")
 
 	apiResponse := make(chan map[string]CurrencyDTO)
 
@@ -86,7 +86,7 @@ func main() {
 	for {
 		select {
 		case resp := <-apiResponse:
-			err := sendCurrencyOnTelegram(formatResponse(resp))
+			err := sendTelegramMessage(formatResponse(resp))
 			if err != nil {
 				logrus.Fatal(err)
 			}
@@ -170,7 +170,7 @@ func getCurrencyValues() (map[string]CurrencyDTO, error) {
 	return dto, nil
 }
 
-func sendCurrencyOnTelegram(content string) error {
+func sendTelegramMessage(content string) error {
 	botAPI, err := telegram.NewBotAPI(telegramToken)
 	if err != nil {
 		return err
