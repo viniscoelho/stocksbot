@@ -1,15 +1,15 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
-	"net/http"
-	"strconv"
+	"time"
 
 	telegram "github.com/go-telegram-bot-api/telegram-bot-api"
-	cron "github.com/robfig/cron/v3"
+	"github.com/piquette/finance-go"
+	"github.com/piquette/finance-go/forex"
+	"github.com/piquette/finance-go/quote"
+	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,18 +18,15 @@ const (
 
 	telegramToken  = ""
 	telegramChatID = int64(0)
-
-	coinsAPI = "https://economia.awesomeapi.com.br/all/USD-BRL,EUR-BRL"
 )
 
-type CurrencyDTO struct {
-	Code      string `json:"code"`
-	CodeIn    string `json:"codein"`
-	Name      string `json:"name"`
-	PctChange string `json:"pctChange"`
-	Bid       string `json:"bid"`
-	Ask       string `json:"ask"`
-	Timestamp string `json:"create_date"`
+type Finance struct {
+	Code                       string  `json:"code"`
+	Name                       string  `json:"name"`
+	RegularMarketChangePercent float64 `json:"change_percent"`
+	Bid                        float64 `json:"bid"`
+	Ask                        float64 `json:"ask"`
+	Timestamp                  string  `json:"timestamp"`
 }
 
 type FloatComp int
@@ -38,6 +35,12 @@ const (
 	Less FloatComp = iota
 	Equal
 	More
+)
+
+const (
+	SAPStockCode = "SAP.F"
+	USDBRLCode   = "USDBRL=X"
+	EURBRLCode   = "EURBRL=X"
 )
 
 var (
@@ -60,27 +63,98 @@ func main() {
 	}
 	defer sendTelegramMessage("I'm dead. :(")
 
-	apiResponse := make(chan map[string]CurrencyDTO)
+	apiResponse := make(chan map[string]Finance)
 
 	c := cron.New()
 	// At every 5th minute past every hour from 9 through 17
 	// on every day-of-week from Monday through Friday
-	c.AddFunc("*/5 9-17 * * 1-5", func() {
-		values, err := getCurrencyValues()
+	_, err = c.AddFunc("*/5 9-17 * * 1-5", func() {
+		values := make(map[string]Finance)
+
+		// SAP
+		sapStock, err := quote.Get(SAPStockCode)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		publish, err := processCurrency(values)
+		sapStockToPublish := NewFinance(sapStock)
+		publish, err := processCurrency(sapStockToPublish)
 		if err != nil {
 			logrus.Fatal(err)
 		}
-
 		if publish {
+			values[SAPStockCode] = sapStockToPublish
+		}
+		// End SAP
+
+		// Euro
+		eurBrl, err := forex.Get(EURBRLCode)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		eurBrlToPublish := NewFinance(&eurBrl.Quote)
+		publish, err = processCurrency(eurBrlToPublish)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		if publish {
+			values[EURBRLCode] = eurBrlToPublish
+		}
+		// End Euro
+
+		// USD
+		usdBrl, err := forex.Get(USDBRLCode)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		usdBrlToPublish := NewFinance(&usdBrl.Quote)
+		publish, err = processCurrency(usdBrlToPublish)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		if publish {
+			values[USDBRLCode] = usdBrlToPublish
+		}
+		// End USD
+
+		if len(values) > 0 {
 			apiResponse <- values
-			logrus.Info(values)
+			logrus.Infof("%+v", values)
 		}
 	})
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	// At 17:35 on every day-of-week from Monday through Friday
+	_, err = c.AddFunc("35 17 * * 1-5", func() {
+		values := make(map[string]Finance)
+		sapStock, err := quote.Get(SAPStockCode)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		values[SAPStockCode] = NewFinance(sapStock)
+
+		eurBrl, err := forex.Get(EURBRLCode)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		values[EURBRLCode] = NewFinance(&eurBrl.Quote)
+
+		usdBrl, err := forex.Get(USDBRLCode)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		values[USDBRLCode] = NewFinance(&usdBrl.Quote)
+
+		apiResponse <- values
+		logrus.Info(values)
+	})
+	if err != nil {
+		logrus.Fatal(err)
+	}
 	c.Start()
 
 	for {
@@ -94,31 +168,39 @@ func main() {
 	}
 }
 
-func processCurrency(values map[string]CurrencyDTO) (bool, error) {
-	flag := false
-	for _, v := range values {
-		cur, err := strconv.ParseFloat(v.Bid, 64)
-		if err != nil {
-			return flag, err
-		}
+func NewFinance(q *finance.Quote) Finance {
+	return Finance{
+		Code:                       q.Symbol,
+		Name:                       q.ShortName,
+		RegularMarketChangePercent: q.RegularMarketChangePercent,
+		Bid:                        q.Bid,
+		Ask:                        q.Ask,
+		Timestamp:                  time.Now().Format(time.RFC822),
+	}
+}
 
-		switch v.Code {
-		case "USD":
-			if floatCompare(cur, USDLowThreshold) == Less {
-				USDLowThreshold = cur - 0.05
-				flag = true
-			} else if floatCompare(cur, USDHighThreshold) == More {
-				USDHighThreshold = cur + 0.05
-				flag = true
-			}
-		case "EUR":
-			if floatCompare(cur, EURLowThreshold) == Less {
-				EURLowThreshold = cur - 0.05
-				flag = true
-			} else if floatCompare(cur, EURHighThreshold) == More {
-				EURHighThreshold = cur + 0.05
-				flag = true
-			}
+func processCurrency(f Finance) (bool, error) {
+	flag := false
+	switch f.Code {
+	case USDBRLCode:
+		if floatCompare(f.Bid, USDLowThreshold) == Less {
+			USDLowThreshold = f.Bid - 0.05
+			flag = true
+		} else if floatCompare(f.Bid, USDHighThreshold) == More {
+			USDHighThreshold = f.Bid + 0.05
+			flag = true
+		}
+	case EURBRLCode:
+		if floatCompare(f.Bid, EURLowThreshold) == Less {
+			EURLowThreshold = f.Bid - 0.05
+			flag = true
+		} else if floatCompare(f.Bid, EURHighThreshold) == More {
+			EURHighThreshold = f.Bid + 0.05
+			flag = true
+		}
+	case SAPStockCode:
+		if floatCompare(f.Bid, 127.0) == More {
+			flag = true
 		}
 	}
 
@@ -134,40 +216,18 @@ func floatCompare(a, b float64) FloatComp {
 	return Equal
 }
 
-func formatResponse(values map[string]CurrencyDTO) string {
-	fmtRes := "Cotações\n"
+func formatResponse(values map[string]Finance) string {
+	fmtRes := "Cotação\n"
 	for _, v := range values {
 		fmtRes += fmt.Sprintf(`
 		Moeda: %s
-		Variação Cambial: %s
-		Venda: %s
-		Compra: %s
+		Variação Cambial: %v%%
+		Venda: %v
+		Compra: %v
 		Horário: %s
-		`, v.Name, v.PctChange, v.Bid, v.Ask, v.Timestamp)
+		`, v.Name, v.RegularMarketChangePercent, v.Bid, v.Ask, v.Timestamp)
 	}
 	return fmtRes
-}
-
-func getCurrencyValues() (map[string]CurrencyDTO, error) {
-	resp, err := http.Get(coinsAPI)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch currencies: %s", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read body content: %s", err)
-	}
-	logrus.Infof("%s", string(body))
-
-	dto := make(map[string]CurrencyDTO)
-	err = json.Unmarshal(body, &dto)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse body content: %s", err)
-	}
-
-	return dto, nil
 }
 
 func sendTelegramMessage(content string) error {
