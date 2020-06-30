@@ -54,6 +54,12 @@ func main() {
 	EURLowThreshold = 5.8
 	EURHighThreshold = 6.2
 
+	err := sendCurrencyOnTelegram("I'm alive!")
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	defer sendCurrencyOnTelegram("I'm dead. :(")
+
 	apiResponse := make(chan map[string]CurrencyDTO)
 
 	c := cron.New()
