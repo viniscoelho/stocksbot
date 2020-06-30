@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"time"
 
 	telegram "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -78,11 +77,7 @@ func main() {
 		}
 
 		sapStockToPublish := NewFinance(sapStock)
-		publish, err := processCurrency(sapStockToPublish)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-		if publish {
+		if processQuote(sapStockToPublish) {
 			values[SAPStockCode] = sapStockToPublish
 		}
 		// End SAP
@@ -94,11 +89,7 @@ func main() {
 		}
 
 		eurBrlToPublish := NewFinance(&eurBrl.Quote)
-		publish, err = processCurrency(eurBrlToPublish)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-		if publish {
+		if processQuote(eurBrlToPublish) {
 			values[EURBRLCode] = eurBrlToPublish
 		}
 		// End Euro
@@ -110,11 +101,7 @@ func main() {
 		}
 
 		usdBrlToPublish := NewFinance(&usdBrl.Quote)
-		publish, err = processCurrency(usdBrlToPublish)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-		if publish {
+		if processQuote(usdBrlToPublish) {
 			values[USDBRLCode] = usdBrlToPublish
 		}
 		// End USD
@@ -123,6 +110,7 @@ func main() {
 			apiResponse <- values
 			logrus.Infof("%+v", values)
 		}
+		logrus.Infof("USD: %v %v, EUR: %v %v", USDLowThreshold, USDHighThreshold, EURLowThreshold, EURHighThreshold)
 	})
 	if err != nil {
 		logrus.Fatal(err)
@@ -179,45 +167,44 @@ func NewFinance(q *finance.Quote) Finance {
 	}
 }
 
-func processCurrency(f Finance) (bool, error) {
-	flag := false
+func processQuote(f Finance) bool {
 	switch f.Code {
 	case USDBRLCode:
 		if floatCompare(f.Bid, USDLowThreshold) == Less {
 			USDLowThreshold = f.Bid - 0.05
-			flag = true
+			return true
 		} else if floatCompare(f.Bid, USDHighThreshold) == More {
 			USDHighThreshold = f.Bid + 0.05
-			flag = true
+			return true
 		}
 	case EURBRLCode:
 		if floatCompare(f.Bid, EURLowThreshold) == Less {
 			EURLowThreshold = f.Bid - 0.05
-			flag = true
+			return true
 		} else if floatCompare(f.Bid, EURHighThreshold) == More {
 			EURHighThreshold = f.Bid + 0.05
-			flag = true
+			return true
 		}
 	case SAPStockCode:
 		if floatCompare(f.Bid, 127.0) == More {
-			flag = true
+			return true
 		}
 	}
 
-	return flag, nil
+	return false
 }
 
 func floatCompare(a, b float64) FloatComp {
-	if math.Abs(a-b) < EPS {
+	if a+EPS < b {
 		return Less
-	} else if math.Abs(a-b) > EPS {
+	} else if a-EPS > b {
 		return More
 	}
 	return Equal
 }
 
 func formatResponse(values map[string]Finance) string {
-	fmtRes := "Cotação\n"
+	fmtRes := "Cotações\n"
 	for _, v := range values {
 		fmtRes += fmt.Sprintf(`
 		Moeda: %s
