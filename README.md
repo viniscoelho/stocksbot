@@ -1,12 +1,5 @@
 # stocksbot
 A telegram bot to report stocks and currency conversion rate values., written in Go.
-
-## How to use it 
-- The simple way (if you have Golang already installed in your machine)
-  - `go run main.go`
-- The simple way with Docker (yeah, you don't have to install any dependencies)
-  - `docker build .` then
-  - `docker run --detach --name stocksbot <image-name>`
   
 ## How to customise it
 The code is configured to send messages in times defined by me, suiting my needs.
@@ -31,4 +24,17 @@ if err != nil {
 }
 values = append(values, types.NewFinance(&eurBrl.Quote))
 ``` 
-The code represents the currency you want to convert from, `EUR`, to another one, `BRL`. 
+The code represents the currency you want to convert from, `EUR`, to another one, `BRL`.
+
+Don't forget to update the container timezone accordingly. The default is set to my location `America/Sao_Paulo`.
+All you need is to update this line from the `Dockerfile`:
+```bash
+ENV TZ=America/Sao_Paulo
+```
+
+## How to use it 
+- The simple way (if you have Golang already installed in your machine)
+  - `go run main.go`
+- The simple way with Docker (yeah, you don't have to install any dependencies)
+  - `docker build .` then
+  - `docker run --detach --name stocksbot <image-name>`
