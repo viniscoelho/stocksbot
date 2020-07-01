@@ -29,10 +29,10 @@ var (
 )
 
 func main() {
-	initializeThresholds()
-
 	logrus.Infof("I'm alive! :D")
 	defer logrus.Infof("I'm dead. :(")
+
+	initializeThresholds()
 
 	apiResponse := make(chan []types.Finance)
 
@@ -63,9 +63,6 @@ func main() {
 
 	// At 17:35 on every day-of-week from Monday through Friday
 	_, err = c.AddFunc("35 17 * * 1-5", func() {
-		// reset for the next day
-		initializeThresholds()
-
 		quotes, err := fetchQuotes()
 		if err != nil {
 			logrus.Fatal(err)
@@ -78,6 +75,15 @@ func main() {
 
 		apiResponse <- values
 		logrus.Infof("%+v", values)
+	})
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	// At 8:59 on every day-of-week from Monday through Friday
+	_, err = c.AddFunc("59 8 * * 1-5", func() {
+		// reset thresholds for each day
+		initializeThresholds()
 	})
 	if err != nil {
 		logrus.Fatal(err)
