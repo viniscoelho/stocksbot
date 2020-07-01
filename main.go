@@ -40,21 +40,21 @@ func main() {
 	// At every 5th minute past every hour from 9 through 17
 	// on every day-of-week from Monday through Friday
 	_, err := c.AddFunc("*/5 9-17 * * 1-5", func() {
-		values, err := fetchQuotes()
+		quotes, err := fetchQuotes()
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
-		filterValues := make([]types.Finance, 0)
-		for _, q := range values {
+		values := make([]types.Finance, 0)
+		for _, q := range quotes {
 			if processQuote(q) {
-				filterValues = append(filterValues, q)
+				values = append(values, q)
 			}
 		}
 
-		if len(filterValues) > 0 {
-			apiResponse <- filterValues
-			logrus.Infof("%+v", filterValues)
+		if len(values) > 0 {
+			apiResponse <- values
+			logrus.Infof("%+v", values)
 		}
 	})
 	if err != nil {
@@ -66,9 +66,14 @@ func main() {
 		// reset for the next day
 		initializeThresholds()
 
-		values, err := fetchQuotes()
+		quotes, err := fetchQuotes()
 		if err != nil {
 			logrus.Fatal(err)
+		}
+
+		values := make([]types.Finance, 0)
+		for _, q := range quotes {
+			values = append(values, q)
 		}
 
 		apiResponse <- values
@@ -96,39 +101,42 @@ func initializeThresholds() {
 		logrus.Fatal(err)
 	}
 
-	SAPLowThreshold = values[0].Ask - 2
-	SAPHighThreshold = values[0].Ask + 2
+	SAPLowThreshold = values[types.SAPStockCode].RegularMarketPreviousClose - 2
+	SAPHighThreshold = values[types.SAPStockCode].RegularMarketPreviousClose + 2
 
-	EURLowThreshold = values[1].Ask - 10
-	EURHighThreshold = values[1].Ask + 10
+	EURLowThreshold = values[types.EURBRLCode].RegularMarketPreviousClose - 0.05
+	EURHighThreshold = values[types.EURBRLCode].RegularMarketPreviousClose + 0.05
 
-	USDLowThreshold = values[2].Ask - 10
-	USDHighThreshold = values[2].Ask + 10
+	USDLowThreshold = values[types.USDBRLCode].RegularMarketPreviousClose - 0.05
+	USDHighThreshold = values[types.USDBRLCode].RegularMarketPreviousClose + 0.05
+	logrus.Infof("SAP Threshold: %v %v", SAPLowThreshold, SAPHighThreshold)
+	logrus.Infof("EUR Threshold: %v %v", EURLowThreshold, EURHighThreshold)
+	logrus.Infof("USD Threshold: %v %v", USDLowThreshold, USDHighThreshold)
 }
 
-func fetchQuotes() ([]types.Finance, error) {
-	values := make([]types.Finance, 0)
+func fetchQuotes() (map[string]types.Finance, error) {
+	values := make(map[string]types.Finance)
 
 	// SAP
 	sapStock, err := quote.Get(types.SAPStockCode)
 	if err != nil {
 		return nil, err
 	}
-	values = append(values, types.NewFinance(sapStock))
+	values[types.SAPStockCode] = types.NewFinance(sapStock)
 
 	// EUR
 	eurBrl, err := forex.Get(types.EURBRLCode)
 	if err != nil {
 		return nil, err
 	}
-	values = append(values, types.NewFinance(&eurBrl.Quote))
+	values[types.EURBRLCode] = types.NewFinance(&eurBrl.Quote)
 
 	// USD
 	usdBrl, err := forex.Get(types.USDBRLCode)
 	if err != nil {
 		return nil, err
 	}
-	values = append(values, types.NewFinance(&usdBrl.Quote))
+	values[types.USDBRLCode] = types.NewFinance(&usdBrl.Quote)
 
 	return values, nil
 }

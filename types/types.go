@@ -33,6 +33,7 @@ type Finance struct {
 	Code                       string  `json:"code"`
 	Name                       string  `json:"name"`
 	RegularMarketChangePercent float64 `json:"change_percent"`
+	RegularMarketPreviousClose float64 `json:"previous_close"`
 	Bid                        float64 `json:"bid"`
 	Ask                        float64 `json:"ask"`
 }
@@ -42,6 +43,7 @@ func NewFinance(q *finance.Quote) Finance {
 		Code:                       q.Symbol,
 		Name:                       q.ShortName,
 		RegularMarketChangePercent: q.RegularMarketChangePercent,
+		RegularMarketPreviousClose: q.RegularMarketPreviousClose,
 		Bid:                        q.Bid,
 		Ask:                        q.Ask,
 	}
