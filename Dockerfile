@@ -15,9 +15,11 @@ FROM alpine:3.11
 
 ENV PROJECT_PACKAGE github.com/viniscoelho/stocksbot
 ENV OBJ_NAME stocksbot
-ENV TZ=America/Sao_Paulo
 
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apk update && apk add tzdata
+ENV TZ America/Sao_Paulo
+RUN ln -s /usr/share/zoneinfo/$TZ /etc/localtime && echo "$TZ" > /etc/timezone
+
 RUN adduser -D ${OBJ_NAME}
 USER ${OBJ_NAME}
 
