@@ -12,6 +12,7 @@ import (
 )
 
 func initializeThresholds() {
+	logrus.Infof("Initialising thresholds...")
 	values, err := fetchQuotes()
 	if err != nil {
 		logrus.Fatal(err)

@@ -28,7 +28,7 @@ func main() {
 
 	initializeThresholds()
 
-	apiResponse := make(chan []types.Finance)
+	apiResponse := make(chan []types.Finance, 2)
 
 	c := cron.New()
 	// At every 5th minute past every hour from 9 through 17
