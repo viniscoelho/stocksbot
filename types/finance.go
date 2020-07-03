@@ -76,7 +76,7 @@ func (sf simpleFinance) FormatResponse() string {
 		Valor: %v
 		`, sf.Name(), sf.RegularMarketChangePercent(), sf.RegularMarketPrice())
 	case CurrencyType:
-		fmt.Sprintf(`
+		return fmt.Sprintf(`
 		Nome: %s
 		Variação: %v%%
 		Compra: %v
