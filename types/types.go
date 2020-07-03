@@ -10,7 +10,7 @@ const (
 )
 
 var (
-	DefaultQuotes = []string{SAPStockCode, USDBRLCode, EURBRLCode}
+	DefaultAssets = []string{SAPStockCode, USDBRLCode, EURBRLCode}
 )
 
 type FloatComp int
@@ -30,7 +30,7 @@ func FloatCompare(a, b float64) FloatComp {
 	return Equal
 }
 
-type Finance interface {
+type Asset interface {
 	Code() string
 	QuoteType() string
 	Name() string

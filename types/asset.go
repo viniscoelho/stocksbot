@@ -11,7 +11,7 @@ const (
 	CurrencyType = "CURRENCY"
 )
 
-type simpleFinance struct {
+type simpleAsset struct {
 	code                       string
 	quoteType                  string
 	name                       string
@@ -22,8 +22,8 @@ type simpleFinance struct {
 	ask                        float64
 }
 
-func NewFinance(q *finance.Equity) *simpleFinance {
-	return &simpleFinance{
+func NewAsset(q *finance.Equity) *simpleAsset {
+	return &simpleAsset{
 		code:                       q.Symbol,
 		quoteType:                  string(q.QuoteType),
 		name:                       q.ShortName,
@@ -35,39 +35,39 @@ func NewFinance(q *finance.Equity) *simpleFinance {
 	}
 }
 
-func (sf simpleFinance) Code() string {
+func (sf simpleAsset) Code() string {
 	return sf.code
 }
 
-func (sf simpleFinance) QuoteType() string {
+func (sf simpleAsset) QuoteType() string {
 	return sf.quoteType
 }
 
-func (sf simpleFinance) Name() string {
+func (sf simpleAsset) Name() string {
 	return sf.name
 }
 
-func (sf simpleFinance) RegularMarketPrice() float64 {
+func (sf simpleAsset) RegularMarketPrice() float64 {
 	return sf.regularMarketPrice
 }
 
-func (sf simpleFinance) RegularMarketChangePercent() float64 {
+func (sf simpleAsset) RegularMarketChangePercent() float64 {
 	return sf.regularMarketChangePercent
 }
 
-func (sf simpleFinance) RegularMarketPreviousClose() float64 {
+func (sf simpleAsset) RegularMarketPreviousClose() float64 {
 	return sf.regularMarketPreviousClose
 }
 
-func (sf simpleFinance) Bid() float64 {
+func (sf simpleAsset) Bid() float64 {
 	return sf.bid
 }
 
-func (sf simpleFinance) Ask() float64 {
+func (sf simpleAsset) Ask() float64 {
 	return sf.ask
 }
 
-func (sf simpleFinance) FormatResponse() string {
+func (sf simpleAsset) FormatResponse() string {
 	switch sf.quoteType {
 	case EquityType:
 		return fmt.Sprintf(`
@@ -87,6 +87,6 @@ func (sf simpleFinance) FormatResponse() string {
 	return "type not supported"
 }
 
-func (sf simpleFinance) ToString() string {
+func (sf simpleAsset) ToString() string {
 	return fmt.Sprintf("%+v", sf)
 }

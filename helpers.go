@@ -10,7 +10,7 @@ import (
 	"github.com/stocksbot/types"
 )
 
-func resetThresholds(thresholds map[string]types.Threshold, filter []types.Finance) {
+func resetThresholds(thresholds map[string]types.Threshold, filter []types.Asset) {
 	logrus.Infof("Resetting thresholds...")
 	values, err := fetchQuotes()
 	if err != nil {
@@ -24,7 +24,7 @@ func resetThresholds(thresholds map[string]types.Threshold, filter []types.Finan
 
 	// update all
 	if filter == nil {
-		for _, c := range types.DefaultQuotes {
+		for _, c := range types.DefaultAssets {
 			switch c {
 			case types.SAPStockCode:
 				thresholds[c] = types.NewThreshold(
@@ -55,14 +55,14 @@ func resetThresholds(thresholds map[string]types.Threshold, filter []types.Finan
 	}
 }
 
-func fetchQuotes() (map[string]types.Finance, error) {
+func fetchQuotes() (map[string]types.Asset, error) {
 	symbols := []string{types.SAPStockCode, types.EURBRLCode, types.USDBRLCode}
-	values := make(map[string]types.Finance)
+	values := make(map[string]types.Asset)
 
 	assets := equity.List(symbols)
 	for assets.Next() {
 		q := assets.Equity()
-		values[q.Symbol] = types.NewFinance(q)
+		values[q.Symbol] = types.NewAsset(q)
 		logrus.Infof("Fetched %s: %+v", q.Symbol, q)
 	}
 	if assets.Err() != nil {
@@ -79,7 +79,7 @@ func fetchQuotes() (map[string]types.Finance, error) {
 
 // processQuote returns true if a quote had significant changes in a period
 // of time; returns false otherwise
-func processQuote(f types.Finance, thresholds map[string]types.Threshold) bool {
+func processQuote(f types.Asset, thresholds map[string]types.Threshold) bool {
 	var price float64
 	code := f.Code()
 
@@ -104,7 +104,7 @@ func processQuote(f types.Finance, thresholds map[string]types.Threshold) bool {
 	return false
 }
 
-func formatResponse(values []types.Finance) string {
+func formatResponse(values []types.Asset) string {
 	fmtRes := fmt.Sprintf("Cotações %s\n", time.Now().Format(time.RFC822))
 	for _, v := range values {
 		fmtRes += v.FormatResponse()

@@ -15,7 +15,7 @@ func main() {
 	logrus.Infof("I'm alive! :D")
 	defer logrus.Infof("I'm dead. :(")
 
-	apiResponse := make(chan []types.Finance, 2)
+	apiResponse := make(chan []types.Asset, 2)
 	thresholds := make(map[string]types.Threshold, 3)
 
 	resetThresholds(thresholds, nil)
@@ -29,7 +29,7 @@ func main() {
 			logrus.Fatal(err)
 		}
 
-		values := make([]types.Finance, 0)
+		values := make([]types.Asset, 0)
 		for _, q := range quotes {
 			if processQuote(q, thresholds) {
 				values = append(values, q)
@@ -55,7 +55,7 @@ func main() {
 			logrus.Fatal(err)
 		}
 
-		values := make([]types.Finance, 0)
+		values := make([]types.Asset, 0)
 		for _, q := range quotes {
 			values = append(values, q)
 		}
