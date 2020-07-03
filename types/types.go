@@ -1,15 +1,16 @@
 package types
 
-import (
-	"github.com/piquette/finance-go"
-)
-
 const (
+	// default quotes
 	SAPStockCode = "SAP.F"
 	USDBRLCode   = "USDBRL=X"
 	EURBRLCode   = "EURBRL=X"
 
 	EPS = 1e-9
+)
+
+var (
+	DefaultQuotes = []string{SAPStockCode, USDBRLCode, EURBRLCode}
 )
 
 type FloatComp int
@@ -29,22 +30,17 @@ func FloatCompare(a, b float64) FloatComp {
 	return Equal
 }
 
-type Finance struct {
-	Code                       string  `json:"code"`
-	Name                       string  `json:"name"`
-	RegularMarketChangePercent float64 `json:"change_percent"`
-	RegularMarketPreviousClose float64 `json:"previous_close"`
-	Bid                        float64 `json:"bid"`
-	Ask                        float64 `json:"ask"`
+type Finance interface {
+	Code() string
+	Name() string
+	RegularMarketChangePercent() float64
+	RegularMarketPreviousClose() float64
+	Bid() float64
+	Ask() float64
 }
 
-func NewFinance(q *finance.Quote) Finance {
-	return Finance{
-		Code:                       q.Symbol,
-		Name:                       q.ShortName,
-		RegularMarketChangePercent: q.RegularMarketChangePercent,
-		RegularMarketPreviousClose: q.RegularMarketPreviousClose,
-		Bid:                        q.Bid,
-		Ask:                        q.Ask,
-	}
+type Threshold interface {
+	LowerBound() float64
+	UpperBound() float64
+	UpdateBounds(low, high float64)
 }

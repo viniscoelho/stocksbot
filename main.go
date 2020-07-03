@@ -11,24 +11,14 @@ const (
 	telegramChatID = int64(0)
 )
 
-var (
-	USDLowThreshold  float64
-	USDHighThreshold float64
-
-	EURLowThreshold  float64
-	EURHighThreshold float64
-
-	SAPLowThreshold  float64
-	SAPHighThreshold float64
-)
-
 func main() {
 	logrus.Infof("I'm alive! :D")
 	defer logrus.Infof("I'm dead. :(")
 
-	initializeThresholds()
-
 	apiResponse := make(chan []types.Finance, 2)
+	thresholds := make(map[string]types.Threshold, 3)
+
+	resetThresholds(thresholds, nil)
 
 	c := cron.New()
 	// At every 5th minute past every hour from 9 through 17
@@ -41,12 +31,13 @@ func main() {
 
 		values := make([]types.Finance, 0)
 		for _, q := range quotes {
-			if processQuote(q) {
+			if processQuote(q, thresholds) {
 				values = append(values, q)
 			}
 		}
 
 		if len(values) > 0 {
+			resetThresholds(thresholds, values)
 			apiResponse <- values
 			logrus.Infof("%+v", values)
 		}
@@ -77,7 +68,7 @@ func main() {
 	// At 8:59 on every day-of-week from Monday through Friday
 	_, err = c.AddFunc("59 8 * * 1-5", func() {
 		// reset thresholds for each day
-		initializeThresholds()
+		resetThresholds(thresholds, nil)
 	})
 	if err != nil {
 		logrus.Fatal(err)

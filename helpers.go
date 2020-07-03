@@ -11,24 +11,38 @@ import (
 	"github.com/stocksbot/types"
 )
 
-func initializeThresholds() {
-	logrus.Infof("Initialising thresholds...")
+func resetThresholds(thresholds map[string]types.Threshold, filter []types.Finance) {
+	logrus.Infof("Resetting thresholds...")
 	values, err := fetchQuotes()
 	if err != nil {
 		logrus.Fatal(err)
 	}
+	defer logrus.Infof("Thresholds: %+v", thresholds)
 
-	SAPLowThreshold = values[types.SAPStockCode].RegularMarketPreviousClose - 2
-	SAPHighThreshold = values[types.SAPStockCode].RegularMarketPreviousClose + 2
+	// update all
+	if filter == nil {
+		for _, f := range types.DefaultQuotes {
+			thresholds[f] = types.NewThreshold(
+				values[f].RegularMarketPreviousClose()-2.0,
+				values[f].RegularMarketPreviousClose()+2.0)
+		}
+		return
+	}
 
-	EURLowThreshold = values[types.EURBRLCode].RegularMarketPreviousClose - 0.05
-	EURHighThreshold = values[types.EURBRLCode].RegularMarketPreviousClose + 0.05
-
-	USDLowThreshold = values[types.USDBRLCode].RegularMarketPreviousClose - 0.05
-	USDHighThreshold = values[types.USDBRLCode].RegularMarketPreviousClose + 0.05
-	logrus.Infof("SAP Threshold: %v %v", SAPLowThreshold, SAPHighThreshold)
-	logrus.Infof("EUR Threshold: %v %v", EURLowThreshold, EURHighThreshold)
-	logrus.Infof("USD Threshold: %v %v", USDLowThreshold, USDHighThreshold)
+	// update only those which have changed
+	for _, f := range filter {
+		code := f.Code()
+		switch code {
+		case types.SAPStockCode:
+			thresholds[code] = types.NewThreshold(
+				values[code].RegularMarketPreviousClose()-2.0,
+				values[code].RegularMarketPreviousClose()+2.0)
+		case types.EURBRLCode, types.USDBRLCode:
+			thresholds[code] = types.NewThreshold(
+				values[code].RegularMarketPreviousClose()-0.05,
+				values[code].RegularMarketPreviousClose()+0.05)
+		}
+	}
 }
 
 func fetchQuotes() (map[string]types.Finance, error) {
@@ -58,32 +72,12 @@ func fetchQuotes() (map[string]types.Finance, error) {
 	return values, nil
 }
 
-func processQuote(f types.Finance) bool {
-	switch f.Code {
-	case types.USDBRLCode:
-		if types.FloatCompare(f.Ask, USDLowThreshold) == types.Less {
-			USDLowThreshold = f.Ask - 0.03
-			return true
-		} else if types.FloatCompare(f.Ask, USDHighThreshold) == types.More {
-			USDHighThreshold = f.Ask + 0.03
-			return true
-		}
-	case types.EURBRLCode:
-		if types.FloatCompare(f.Ask, EURLowThreshold) == types.Less {
-			EURLowThreshold = f.Ask - 0.03
-			return true
-		} else if types.FloatCompare(f.Ask, EURHighThreshold) == types.More {
-			EURHighThreshold = f.Ask + 0.03
-			return true
-		}
-	case types.SAPStockCode:
-		if types.FloatCompare(f.Ask, SAPLowThreshold) == types.Less {
-			SAPLowThreshold = f.Ask - 1.0
-			return true
-		} else if types.FloatCompare(f.Ask, SAPHighThreshold) == types.More {
-			SAPHighThreshold = f.Ask + 1.0
-			return true
-		}
+func processQuote(f types.Finance, thresholds map[string]types.Threshold) bool {
+	code := f.Code()
+	if types.FloatCompare(f.Ask(), thresholds[code].LowerBound()) == types.Less {
+		return true
+	} else if types.FloatCompare(f.Ask(), thresholds[code].LowerBound()) == types.More {
+		return true
 	}
 
 	return false
