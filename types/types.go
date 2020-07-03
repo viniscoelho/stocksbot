@@ -32,11 +32,14 @@ func FloatCompare(a, b float64) FloatComp {
 
 type Finance interface {
 	Code() string
+	QuoteType() string
 	Name() string
+	RegularMarketPrice() float64
 	RegularMarketChangePercent() float64
 	RegularMarketPreviousClose() float64
 	Bid() float64
 	Ask() float64
+	FormatResponse() string
 	ToString() string
 }
 

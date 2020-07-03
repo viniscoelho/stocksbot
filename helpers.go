@@ -5,8 +5,7 @@ import (
 	"time"
 
 	telegram "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/piquette/finance-go/forex"
-	"github.com/piquette/finance-go/quote"
+	"github.com/piquette/finance-go/equity"
 	"github.com/sirupsen/logrus"
 	"github.com/stocksbot/types"
 )
@@ -40,7 +39,7 @@ func resetThresholds(thresholds map[string]types.Threshold, filter []types.Finan
 		return
 	}
 
-	// update only those which have changed
+	// update only for those which have changed
 	for _, f := range filter {
 		code := f.Code()
 		switch code {
@@ -57,37 +56,43 @@ func resetThresholds(thresholds map[string]types.Threshold, filter []types.Finan
 }
 
 func fetchQuotes() (map[string]types.Finance, error) {
+	symbols := []string{types.SAPStockCode, types.EURBRLCode, types.USDBRLCode}
 	values := make(map[string]types.Finance)
 
-	// SAP
-	sapStock, err := quote.Get(types.SAPStockCode)
-	if err != nil {
-		return nil, err
+	assets := equity.List(symbols)
+	for assets.Next() {
+		q := assets.Equity()
+		values[q.Symbol] = types.NewFinance(q)
+		logrus.Infof("Fetched %s: %+v", q.Symbol, q)
 	}
-	values[types.SAPStockCode] = types.NewFinance(sapStock)
+	if assets.Err() != nil {
+		return values, assets.Err()
+	}
 
-	// EUR
-	eurBrl, err := forex.Get(types.EURBRLCode)
-	if err != nil {
-		return nil, err
+	// fetchQuotes should not return an empty list of values
+	if len(values) == 0 {
+		return values, fmt.Errorf("error: query returned an empty list")
 	}
-	values[types.EURBRLCode] = types.NewFinance(&eurBrl.Quote)
-
-	// USD
-	usdBrl, err := forex.Get(types.USDBRLCode)
-	if err != nil {
-		return nil, err
-	}
-	values[types.USDBRLCode] = types.NewFinance(&usdBrl.Quote)
 
 	return values, nil
 }
 
+// processQuote returns true if a quote had significant changes in a period
+// of time; returns false otherwise
 func processQuote(f types.Finance, thresholds map[string]types.Threshold) bool {
+	var price float64
 	code := f.Code()
-	if types.FloatCompare(f.Ask(), thresholds[code].LowerBound()) == types.Less {
+
+	switch f.QuoteType() {
+	case types.EquityType:
+		price = f.RegularMarketPrice()
+	default:
+		price = f.Ask()
+	}
+
+	if types.FloatCompare(price, thresholds[code].LowerBound()) == types.Less {
 		return true
-	} else if types.FloatCompare(f.Ask(), thresholds[code].UpperBound()) == types.More {
+	} else if types.FloatCompare(price, thresholds[code].UpperBound()) == types.More {
 		return true
 	}
 
@@ -97,12 +102,7 @@ func processQuote(f types.Finance, thresholds map[string]types.Threshold) bool {
 func formatResponse(values []types.Finance) string {
 	fmtRes := fmt.Sprintf("Cotações %s\n", time.Now().Format(time.RFC822))
 	for _, v := range values {
-		fmtRes += fmt.Sprintf(`
-		Nome: %s
-		Variação: %v%%
-		Compra: %v
-		Venda: %v
-		`, v.Name(), v.RegularMarketChangePercent(), v.Bid(), v.Ask())
+		fmtRes += v.FormatResponse()
 	}
 	return fmtRes
 }

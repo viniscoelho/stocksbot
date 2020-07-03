@@ -1,11 +1,11 @@
-package quote
+package equity
 
 import (
 	"context"
 	"strings"
 
 	finance "github.com/piquette/finance-go"
-	"github.com/piquette/finance-go/form"
+	form "github.com/piquette/finance-go/form"
 	"github.com/piquette/finance-go/iter"
 )
 
@@ -34,21 +34,21 @@ type Iter struct {
 	*iter.Iter
 }
 
-// Quote returns the most recent Quote
+// Equity returns the most recent Equity
 // visited by a call to Next.
-func (i *Iter) Quote() *finance.Quote {
-	return i.Current().(*finance.Quote)
+func (i *Iter) Equity() *finance.Equity {
+	return i.Current().(*finance.Equity)
 }
 
-// Get returns an Quote quote that matches the parameters specified.
-func Get(symbol string) (*finance.Quote, error) {
+// Get returns an equity quote that matches the parameters specified.
+func Get(symbol string) (*finance.Equity, error) {
 	i := List([]string{symbol})
 
 	if !i.Next() {
 		return nil, i.Err()
 	}
 
-	return i.Quote(), nil
+	return i.Equity(), nil
 }
 
 // List returns several quotes.
@@ -103,7 +103,7 @@ func (c Client) ListP(params *Params) *Iter {
 // response is a yfin quote response.
 type response struct {
 	Inner struct {
-		Result []*finance.Quote   `json:"result"`
+		Result []*finance.Equity  `json:"result"`
 		Error  *finance.YfinError `json:"error"`
 	} `json:"quoteResponse"`
 }
