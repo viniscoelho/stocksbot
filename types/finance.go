@@ -1,6 +1,10 @@
 package types
 
-import "github.com/piquette/finance-go"
+import (
+	"fmt"
+
+	"github.com/piquette/finance-go"
+)
 
 type simpleFinance struct {
 	code                       string
@@ -44,4 +48,8 @@ func (sf simpleFinance) Bid() float64 {
 
 func (sf simpleFinance) Ask() float64 {
 	return sf.ask
+}
+
+func (sf simpleFinance) ToString() string {
+	return fmt.Sprintf("%+v", sf)
 }

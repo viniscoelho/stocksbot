@@ -17,7 +17,11 @@ func resetThresholds(thresholds map[string]types.Threshold, filter []types.Finan
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	defer logrus.Infof("Thresholds: %+v", thresholds)
+	defer func() {
+		for n, t := range thresholds {
+			logrus.Infof("Threshold %s: %v", n, t.ToString())
+		}
+	}()
 
 	// update all
 	if filter == nil {

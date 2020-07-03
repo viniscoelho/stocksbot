@@ -39,7 +39,9 @@ func main() {
 		if len(values) > 0 {
 			resetThresholds(thresholds, values)
 			apiResponse <- values
-			logrus.Infof("%+v", values)
+			for _, v := range values {
+				logrus.Infof("Quotes: %s", v.ToString())
+			}
 		}
 	})
 	if err != nil {
@@ -59,7 +61,9 @@ func main() {
 		}
 
 		apiResponse <- values
-		logrus.Infof("%+v", values)
+		for _, v := range values {
+			logrus.Infof("Quotes: %s", v.ToString())
+		}
 	})
 	if err != nil {
 		logrus.Fatal(err)

@@ -1,5 +1,7 @@
 package types
 
+import "fmt"
+
 type simpleThreshold struct {
 	low  float64
 	high float64
@@ -22,4 +24,8 @@ func (st simpleThreshold) UpperBound() float64 {
 
 func (st *simpleThreshold) UpdateBounds(low, high float64) {
 	st.low, st.high = low, high
+}
+
+func (st simpleThreshold) ToString() string {
+	return fmt.Sprintf("%+v", st)
 }

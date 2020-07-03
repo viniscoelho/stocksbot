@@ -37,10 +37,12 @@ type Finance interface {
 	RegularMarketPreviousClose() float64
 	Bid() float64
 	Ask() float64
+	ToString() string
 }
 
 type Threshold interface {
 	LowerBound() float64
 	UpperBound() float64
 	UpdateBounds(low, high float64)
+	ToString() string
 }
