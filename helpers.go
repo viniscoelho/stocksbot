@@ -95,7 +95,7 @@ func formatResponse(values []types.Finance) string {
 		Variação: %v%%
 		Compra: %v
 		Venda: %v
-		`, v.Name, v.RegularMarketChangePercent, v.Bid, v.Ask)
+		`, v.Name(), v.RegularMarketChangePercent(), v.Bid(), v.Ask())
 	}
 	return fmtRes
 }
