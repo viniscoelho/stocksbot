@@ -87,7 +87,7 @@ func processQuote(f types.Finance, thresholds map[string]types.Threshold) bool {
 	code := f.Code()
 	if types.FloatCompare(f.Ask(), thresholds[code].LowerBound()) == types.Less {
 		return true
-	} else if types.FloatCompare(f.Ask(), thresholds[code].LowerBound()) == types.More {
+	} else if types.FloatCompare(f.Ask(), thresholds[code].UpperBound()) == types.More {
 		return true
 	}
 
