@@ -90,6 +90,11 @@ func processQuote(f types.Finance, thresholds map[string]types.Threshold) bool {
 		price = f.Ask()
 	}
 
+	if _, ok := thresholds[code]; !ok {
+		logrus.Warn("Unregistered asset -- this should not happen")
+		return false
+	}
+
 	if types.FloatCompare(price, thresholds[code].LowerBound()) == types.Less {
 		return true
 	} else if types.FloatCompare(price, thresholds[code].UpperBound()) == types.More {
