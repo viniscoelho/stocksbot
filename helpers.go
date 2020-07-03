@@ -25,10 +25,17 @@ func resetThresholds(thresholds map[string]types.Threshold, filter []types.Finan
 
 	// update all
 	if filter == nil {
-		for _, f := range types.DefaultQuotes {
-			thresholds[f] = types.NewThreshold(
-				values[f].RegularMarketPreviousClose()-2.0,
-				values[f].RegularMarketPreviousClose()+2.0)
+		for _, c := range types.DefaultQuotes {
+			switch c {
+			case types.SAPStockCode:
+				thresholds[c] = types.NewThreshold(
+					values[c].RegularMarketPreviousClose()-2.0,
+					values[c].RegularMarketPreviousClose()+2.0)
+			case types.EURBRLCode, types.USDBRLCode:
+				thresholds[c] = types.NewThreshold(
+					values[c].RegularMarketPreviousClose()-0.05,
+					values[c].RegularMarketPreviousClose()+0.05)
+			}
 		}
 		return
 	}
