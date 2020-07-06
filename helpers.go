@@ -45,12 +45,12 @@ func resetThresholds(thresholds map[string]types.Threshold, filter []types.Asset
 		switch code {
 		case types.SAPStockCode:
 			thresholds[code] = types.NewThreshold(
-				values[code].RegularMarketPreviousClose()-2.0,
-				values[code].RegularMarketPreviousClose()+2.0)
+				values[code].RegularMarketPrice()-2.0,
+				values[code].RegularMarketPrice()+2.0)
 		case types.EURBRLCode, types.USDBRLCode:
 			thresholds[code] = types.NewThreshold(
-				values[code].RegularMarketPreviousClose()-0.05,
-				values[code].RegularMarketPreviousClose()+0.05)
+				values[code].Ask()-0.05,
+				values[code].Ask()+0.05)
 		}
 	}
 }
