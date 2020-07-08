@@ -28,12 +28,12 @@ func resetThresholds(thresholds map[string]types.Threshold, filter []types.Asset
 			switch c {
 			case types.SAPStockCode:
 				thresholds[c] = types.NewThreshold(
-					values[c].RegularMarketPreviousClose()-2.0,
-					values[c].RegularMarketPreviousClose()+2.0)
+					values[c].RegularMarketPreviousClose()-1.0,
+					values[c].RegularMarketPreviousClose()+1.0)
 			case types.EURBRLCode, types.USDBRLCode:
 				thresholds[c] = types.NewThreshold(
-					values[c].RegularMarketPreviousClose()-0.05,
-					values[c].RegularMarketPreviousClose()+0.05)
+					values[c].RegularMarketPreviousClose()-0.025,
+					values[c].RegularMarketPreviousClose()+0.025)
 			}
 		}
 		return
@@ -45,12 +45,12 @@ func resetThresholds(thresholds map[string]types.Threshold, filter []types.Asset
 		switch code {
 		case types.SAPStockCode:
 			thresholds[code] = types.NewThreshold(
-				values[code].RegularMarketPrice()-2.0,
-				values[code].RegularMarketPrice()+2.0)
+				values[code].RegularMarketPrice()-1.0,
+				values[code].RegularMarketPrice()+1.0)
 		case types.EURBRLCode, types.USDBRLCode:
 			thresholds[code] = types.NewThreshold(
-				values[code].Ask()-0.05,
-				values[code].Ask()+0.05)
+				values[code].Ask()-0.025,
+				values[code].Ask()+0.025)
 		}
 	}
 }
