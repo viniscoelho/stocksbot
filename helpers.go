@@ -10,11 +10,12 @@ import (
 	"github.com/stocksbot/types"
 )
 
-func resetThresholds(thresholds map[string]types.Threshold, filter []types.Asset) {
-	logrus.Infof("Resetting thresholds...")
-	values, err := fetchQuotes()
+func updateThresholds(thresholds map[string]types.Threshold, filter []types.Asset) {
+	logrus.Infof("Updating thresholds...")
+	values, err := fetchAssets()
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.Errorf("Could not fetch assets: %s", err)
+		return
 	}
 	defer func() {
 		for n, t := range thresholds {
@@ -55,7 +56,7 @@ func resetThresholds(thresholds map[string]types.Threshold, filter []types.Asset
 	}
 }
 
-func fetchQuotes() (map[string]types.Asset, error) {
+func fetchAssets() (map[string]types.Asset, error) {
 	symbols := []string{types.SAPStockCode, types.EURBRLCode, types.USDBRLCode}
 	values := make(map[string]types.Asset)
 
@@ -69,7 +70,7 @@ func fetchQuotes() (map[string]types.Asset, error) {
 		return values, assets.Err()
 	}
 
-	// fetchQuotes should not return an empty list of values
+	// fetchAssets should not return an empty list of values
 	if len(values) == 0 {
 		return values, fmt.Errorf("error: query returned an empty list")
 	}

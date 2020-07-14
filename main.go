@@ -18,15 +18,16 @@ func main() {
 	apiResponse := make(chan []types.Asset, 2)
 	thresholds := make(map[string]types.Threshold, 3)
 
-	resetThresholds(thresholds, nil)
+	updateThresholds(thresholds, nil)
 
 	c := cron.New()
 	// At every 5th minute past every hour from 9 through 17
 	// on every day-of-week from Monday through Friday
 	_, err := c.AddFunc("*/5 9-17 * * 1-5", func() {
-		quotes, err := fetchQuotes()
+		quotes, err := fetchAssets()
 		if err != nil {
-			logrus.Fatal(err)
+			logrus.Errorf("Could not fetch assets: %s", err)
+			return
 		}
 
 		values := make([]types.Asset, 0)
@@ -37,10 +38,10 @@ func main() {
 		}
 
 		if len(values) > 0 {
-			resetThresholds(thresholds, values)
+			updateThresholds(thresholds, values)
 			apiResponse <- values
 			for _, v := range values {
-				logrus.Infof("Quotes: %s", v.ToString())
+				logrus.Infof("Updated assets: %s", v.ToString())
 			}
 		}
 	})
@@ -50,9 +51,10 @@ func main() {
 
 	// At 17:35 on every day-of-week from Monday through Friday
 	_, err = c.AddFunc("35 17 * * 1-5", func() {
-		quotes, err := fetchQuotes()
+		quotes, err := fetchAssets()
 		if err != nil {
-			logrus.Fatal(err)
+			logrus.Errorf("Could not fetch assets: %s", err)
+			return
 		}
 
 		values := make([]types.Asset, 0)
@@ -62,7 +64,7 @@ func main() {
 
 		apiResponse <- values
 		for _, v := range values {
-			logrus.Infof("Quotes: %s", v.ToString())
+			logrus.Infof("Assets: %s", v.ToString())
 		}
 	})
 	if err != nil {
@@ -72,7 +74,7 @@ func main() {
 	// At 8:59 on every day-of-week from Monday through Friday
 	_, err = c.AddFunc("59 8 * * 1-5", func() {
 		// reset thresholds for each day
-		resetThresholds(thresholds, nil)
+		updateThresholds(thresholds, nil)
 	})
 	if err != nil {
 		logrus.Fatal(err)
@@ -84,7 +86,8 @@ func main() {
 		case resp := <-apiResponse:
 			err := sendTelegramMessage(formatResponse(resp))
 			if err != nil {
-				logrus.Fatal(err)
+				logrus.Errorf("Could not send message: %s", err)
+				return
 			}
 		}
 	}
