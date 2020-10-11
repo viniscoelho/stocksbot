@@ -49,8 +49,8 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	// At 17:35 on every day-of-week from Monday through Friday
-	_, err = c.AddFunc("35 17 * * 1-5", func() {
+	// At 18:00 on every day-of-week from Monday through Friday
+	_, err = c.AddFunc("0 18 * * 1-5", func() {
 		quotes, err := fetchAssets()
 		if err != nil {
 			logrus.Errorf("Could not fetch assets: %s", err)
