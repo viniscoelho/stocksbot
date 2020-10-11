@@ -33,8 +33,8 @@ func updateThresholds(thresholds map[string]types.Threshold, filter []types.Asse
 					values[c].RegularMarketPreviousClose()+1.0)
 			case types.EURBRLCode, types.USDBRLCode:
 				thresholds[c] = types.NewThreshold(
-					values[c].RegularMarketPreviousClose()-0.025,
-					values[c].RegularMarketPreviousClose()+0.025)
+					values[c].RegularMarketPreviousClose()-0.05,
+					values[c].RegularMarketPreviousClose()+0.05)
 			}
 		}
 		return
@@ -50,8 +50,8 @@ func updateThresholds(thresholds map[string]types.Threshold, filter []types.Asse
 				values[code].RegularMarketPrice()+1.0)
 		case types.EURBRLCode, types.USDBRLCode:
 			thresholds[code] = types.NewThreshold(
-				values[code].Ask()-0.025,
-				values[code].Ask()+0.025)
+				values[code].Ask()-0.05,
+				values[code].Ask()+0.05)
 		}
 	}
 }
