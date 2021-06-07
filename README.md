@@ -1,5 +1,5 @@
 # stocksbot
-A telegram bot to report stocks and currency conversion rate values., written in Go.
+A telegram bot to report stocks and currency conversion rate values, written in Go.
   
 ## How to customise it
 The code is configured to send messages in times defined by me, suiting my needs.
