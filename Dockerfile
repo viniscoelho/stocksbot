@@ -1,4 +1,4 @@
-FROM golang:1.14-alpine as build-stage
+FROM golang:1.18-alpine as build-stage
 
 ENV CGO_ENABLED 0
 ENV PROJECT_PACKAGE github.com/viniscoelho/stocksbot
