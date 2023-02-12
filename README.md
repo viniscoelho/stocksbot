@@ -49,7 +49,7 @@ telegramChatID = int64(<my-group-id>)
 - The simple way (if you have Golang already installed in your machine)
   - `go run main.go`
 - The simple way with Docker (yeah, you don't have to install any dependencies)
-  - `docker build -t stocksbot.` then
+  - `docker build -t stocksbot .` then
   - `docker run --detach stocksbot`
 
 That's it. Feel free to provide feedback and/or report issues. 
